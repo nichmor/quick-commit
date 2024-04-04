@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+PYTHON_EXEC_LOCATION={{ python_location }}
+ARGS={{ hook_args }}
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+ARGS+=(--hook-dir "$HERE" -- "$@")
+
+if [ -x "$PYTHON_EXEC_LOCATION" ]; then
+    # exec "$PYTHON_EXEC_LOCATION" -mpre_commit "${ARGS[@]}"
+    exec "$PYTHON_EXEC_LOCATION" -c "print('hello')"
+
+elif command -v pre-commit > /dev/null; then
+    exec pre-commit "${ARGS[@]}"
+else
+    echo '`pre-commit` not found.  Did you forget to activate your virtualenv?' 1>&2
+    exit 1
+fi

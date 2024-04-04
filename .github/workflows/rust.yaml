@@ -1,0 +1,68 @@
+on:
+    push:
+        branches:
+            - main
+  
+name: Rust
+
+jobs:
+    format_and_lint:
+        name: Format and Lint
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+            with:
+              submodules: recursive
+          - uses: actions-rust-lang/setup-rust-toolchain@v1
+            with:
+              components: clippy, rustfmt
+          - name: Run rustfmt
+            uses: actions-rust-lang/rustfmt@v1
+          - name: Run clippy
+            run: cargo clippy
+
+
+    build:
+        name: ${{ matrix.name }}
+        runs-on: ${{ matrix.os }}
+        needs: [ format_and_lint ]
+        strategy:
+          fail-fast: false
+          matrix:
+            include:
+              - { name: "Linux-x86_64",       target: x86_64-unknown-linux-musl,  os: ubuntu-20.04 }
+        steps:
+        - name: Checkout source code
+          uses: actions/checkout@v4
+
+        - name: Install Rust toolchain
+          uses: actions-rust-lang/setup-rust-toolchain@v1
+          with:
+           target: ${{ matrix.target }}
+           cache: false
+
+        - uses: taiki-e/setup-cross-toolchain-action@v1
+          with:
+            target: ${{ matrix.target }}
+
+        - uses: Swatinem/rust-cache@v2
+
+
+        - name: Show version information (Rust, cargo, GCC)
+          shell: bash
+          run: |
+            gcc --version || true
+            rustup -V
+            rustup toolchain list
+            cargo -V
+            rustc -V
+
+
+        - name: Build
+          run: >
+            cargo build
+
+        - name: Run tests
+          run: >
+           cargo test
+  
